@@ -2,8 +2,7 @@
 
 // import styles from "./page.module.css";   commenting out bc we will not be using css since our components are all imported from material ui
 
-import { useState, useEffect, useRef } from "react";
-import Upload from "./upload/page";
+import { useState, useEffect } from "react";
 import {
   collection,
   getDocs,
@@ -14,9 +13,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
-import { firestore, storage } from "../firebase"; // Import storage from Firebase
+import { firestore } from "@/firebase";
 import {
   Box,
   Typography,
@@ -25,7 +22,50 @@ import {
   Button,
   Stack,
 } from "@mui/material";
+import CameraComponent from "./CameraComponent.js";
 import Link from "next/link"; // Import Link from react-router-dom
+
+const ImageUploadForm = () => {
+  const [image, setImage] = useState(null);
+  const [imageName, setImageName] = useState("");
+
+  const handleImageChange = (e) => {
+    if (e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (image) {
+      const storageRef = storage.ref();
+      const imageRef = storageRef.child(image.name);
+      await imageRef.put(image);
+      const imageUrl = await imageRef.getDownloadURL();
+
+      // Store the image URL in Firestore
+      await firestore.collection("images").add({
+        name: imageName,
+        url: imageUrl,
+      });
+
+      setImage(null);
+      setImageName("");
+    }
+  };
+
+  return (
+    <div>
+      <input type="file" onChange={handleImageChange} />
+      <input
+        type="text"
+        placeholder="Image Name"
+        value={imageName}
+        onChange={(e) => setImageName(e.target.value)}
+      />
+      <button onClick={handleUpload}>Upload Image</button>
+    </div>
+  );
+};
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
@@ -62,39 +102,12 @@ export default function Home() {
   };
 
   const addItem = async (itemName, image) => {
-    const docRef = doc(firestore, "inventory", itemName.toLowerCase());
+    const docRef = doc(firestore, "inventory", itemName);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       await updateDoc(docRef, { quantity: docSnap.data().quantity + 1 });
-      if (image) {
-        // Upload image to Firebase Storage
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
-
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
-        }
-      }
     } else {
-      await setDoc(docRef, { name: itemName.toLowerCase(), quantity: 1 });
-      if (image) {
-        // Upload image to Firebase Storage
-
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
-
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
-        }
-      }
+      await setDoc(docRef, { name: itemName, quantity: 1 });
     }
     await updateInventory();
   };
@@ -111,26 +124,6 @@ export default function Home() {
     setOpen(false);
   };
 
-  const inputImage = useRef(null);
-
-  const ImageUploadForm = () => {
-    const [image, setImage] = useState(null);
-
-    const handleImageChange = (e) => {
-      if (e.target.files[0]) {
-        setImage(e.target.files[0]);
-        // inputImage.current = URL.createObjectURL(e.target.files[0]); // Set inputImage to the uploaded image
-        inputImage.current = e.target.files[0];
-      }
-    };
-
-    return (
-      <div>
-        <input type="file" onChange={handleImageChange} />
-      </div>
-    );
-  };
-
   return (
     <Box
       width="100vw"
@@ -142,7 +135,6 @@ export default function Home() {
       gap={2}
       bgcolor="white"
     >
-      <Upload />
       <Box
         display="flex"
         justifyContent="center"
@@ -194,7 +186,7 @@ export default function Home() {
               variant="outlined"
               color="primary"
               onClick={() => {
-                addItem(itemName, inputImage.current);
+                addItem(itemName);
                 setItemName("");
                 handleClose();
               }}
@@ -252,7 +244,6 @@ export default function Home() {
               >
                 {quantity}
               </Typography>
-
               {image && (
                 <img src={image} alt={name} style={{ width: 50, height: 50 }} />
               )}
@@ -292,6 +283,7 @@ export default function Home() {
           Scan Item
         </Link>
       </Button>
+      <ImageUploadForm />
     </Box>
   );
 }

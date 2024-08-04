@@ -7,6 +7,9 @@ const nextConfig = {
     NEXT_FIREBASE_API_KEY: process.env.NEXT_FIREBASE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
+  images: {
+    domains: ["firebasestorage.googleapis.com"],
+  },
 };
 
 export default nextConfig;

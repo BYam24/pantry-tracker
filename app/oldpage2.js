@@ -3,7 +3,6 @@
 // import styles from "./page.module.css";   commenting out bc we will not be using css since our components are all imported from material ui
 
 import { useState, useEffect, useRef } from "react";
-import Upload from "./upload/page";
 import {
   collection,
   getDocs,
@@ -14,9 +13,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
-import { firestore, storage } from "../firebase"; // Import storage from Firebase
+import { firestore } from "@/firebase";
 import {
   Box,
   Typography,
@@ -67,33 +64,12 @@ export default function Home() {
     if (docSnap.exists()) {
       await updateDoc(docRef, { quantity: docSnap.data().quantity + 1 });
       if (image) {
-        // Upload image to Firebase Storage
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
-
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
-        }
+        await updateDoc(docRef, { image: image });
       }
     } else {
       await setDoc(docRef, { name: itemName.toLowerCase(), quantity: 1 });
       if (image) {
-        // Upload image to Firebase Storage
-
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
-
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
-        }
+        await updateDoc(docRef, { image: image });
       }
     }
     await updateInventory();
@@ -119,8 +95,7 @@ export default function Home() {
     const handleImageChange = (e) => {
       if (e.target.files[0]) {
         setImage(e.target.files[0]);
-        // inputImage.current = URL.createObjectURL(e.target.files[0]); // Set inputImage to the uploaded image
-        inputImage.current = e.target.files[0];
+        inputImage.current = URL.createObjectURL(e.target.files[0]); // Set inputImage to the uploaded image
       }
     };
 
@@ -142,7 +117,6 @@ export default function Home() {
       gap={2}
       bgcolor="white"
     >
-      <Upload />
       <Box
         display="flex"
         justifyContent="center"
@@ -252,7 +226,6 @@ export default function Home() {
               >
                 {quantity}
               </Typography>
-
               {image && (
                 <img src={image} alt={name} style={{ width: 50, height: 50 }} />
               )}
