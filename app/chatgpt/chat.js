@@ -32,5 +32,5 @@ export default async function handleImageDescription(imageUrl) {
     max_tokens: 500,
   });
 
-  return response.choices[0].message.content;
+  return String(response.choices[0].message.content);
 }

@@ -35,6 +35,7 @@ export default function Home() {
   const [itemName, setItemName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const filteredInventory = inventory.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -54,52 +55,90 @@ export default function Home() {
     const docRef = doc(collection(firestore, "inventory"), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
+      const { quantity, image, description } = docSnap.data();
       if (quantity == 1) {
         await deleteDoc(docRef);
       } else {
-        await setDoc(docRef, { name: item, quantity: quantity - 1 });
+        const updatedData = { name: item, quantity: quantity - 1 };
+        if (image) {
+          updatedData.image = image;
+        }
+        if (description) {
+          updatedData.description = description;
+        }
+        await setDoc(docRef, updatedData);
       }
     }
     await updateInventory();
   };
 
   const addItem = async (itemName, image) => {
-    const docRef = doc(firestore, "inventory", itemName.toLowerCase());
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      await updateDoc(docRef, { quantity: docSnap.data().quantity + 1 });
-      if (image) {
-        // Upload image to Firebase Storage
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
+    setLoading(true); // Set loading to true when adding item
+    try {
+      const docRef = doc(firestore, "inventory", itemName.toLowerCase());
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        await updateDoc(docRef, { quantity: docSnap.data().quantity + 1 });
+        if (image) {
+          // Upload image to Firebase Storage
+          const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
+          try {
+            await uploadBytes(imageRef, inputImage.current);
+            const imageUrl = await getDownloadURL(imageRef);
+            const text = handleImageDescription(imageUrl);
+            const description =
+              typeof text === "object" && text instanceof Promise
+                ? await text
+                : text;
 
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
+            const docData = {
+              image: imageUrl,
+              description: description,
+            };
+
+            await updateDoc(docRef, docData);
+
+            console.log("File Uploaded Successfully");
+          } catch (error) {
+            console.error("Error uploading the file", error);
+          }
+        }
+      } else {
+        await setDoc(docRef, { name: itemName.toLowerCase(), quantity: 1 });
+        if (image) {
+          // Upload image to Firebase Storage
+
+          const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
+          try {
+            await uploadBytes(imageRef, inputImage.current);
+            const imageUrl = await getDownloadURL(imageRef);
+            const text = handleImageDescription(imageUrl);
+            const description =
+              typeof text === "object" && text instanceof Promise
+                ? await text
+                : text;
+
+            const docData = {
+              image: imageUrl,
+              description: description,
+            };
+
+            await updateDoc(docRef, docData);
+
+            console.log("File Uploaded Successfully");
+          } catch (error) {
+            console.error("Error uploading the file", error);
+          }
         }
       }
-    } else {
-      await setDoc(docRef, { name: itemName.toLowerCase(), quantity: 1 });
-      if (image) {
-        // Upload image to Firebase Storage
+      await updateInventory();
 
-        const imageRef = ref(storage, `images/${itemName.toLowerCase()}`);
-        try {
-          await uploadBytes(imageRef, inputImage.current);
-          const imageUrl = await getDownloadURL(imageRef);
-          await updateDoc(docRef, { image: imageUrl });
-
-          console.log("File Uploaded Successfully");
-        } catch (error) {
-          console.error("Error uploading the file", error);
-        }
-      }
+      // Close the modal after loading is complete
+      handleClose();
+    } catch (error) {
+      console.error("Error adding item", error);
     }
-    await updateInventory();
+    setLoading(false); // Set loading to false after item is added
   };
 
   useEffect(() => {
@@ -153,6 +192,21 @@ export default function Home() {
       gap={2}
       bgcolor="white"
     >
+      {loading && (
+        <div
+          style={{
+            fontSize: "32px",
+            justifyContent: "center",
+            alignItems: "center",
+            border: "1px solid black",
+            padding: "10px",
+            borderRadius: "5px",
+          }}
+        >
+          Loading...
+        </div>
+      )}
+
       <Box
         display="flex"
         justifyContent="center"
@@ -206,7 +260,6 @@ export default function Home() {
               onClick={() => {
                 addItem(itemName, inputImage.current);
                 setItemName("");
-                handleClose();
               }}
             >
               Add Item
@@ -234,7 +287,7 @@ export default function Home() {
           direction="column"
           spacing={2}
         >
-          {filteredInventory.map(({ name, quantity, image }) => (
+          {filteredInventory.map(({ name, quantity, image, description }) => (
             <Box
               key={name}
               width="100%"
@@ -245,18 +298,18 @@ export default function Home() {
               justifyContent="space-between"
               alignItems="center"
               padding={5}
-              onClick={() => {
-                // Handle item click only if there is an image
-                if (image) {
-                  handleItemClick(image);
-                }
-              }}
             >
               <Typography
                 variant="h3"
                 color="black"
                 textAlign="center"
                 sx={{ flex: 1 }}
+                onClick={() => {
+                  // Handle item click only if there is an image
+                  if (image) {
+                    handleItemClick([image, description]);
+                  }
+                }}
               >
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </Typography>
@@ -321,13 +374,13 @@ export default function Home() {
               }}
             >
               <img
-                src={selectedItem}
+                src={selectedItem[0]}
                 style={{ width: "500px" }}
                 alt="Selected Item"
               />
 
               <Typography variant="caption" style={{ padding: "10px" }}>
-                {handleImageDescription(selectedItem)}
+                {selectedItem[1]}
               </Typography>
             </div>
           )}
