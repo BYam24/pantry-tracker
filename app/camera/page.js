@@ -57,7 +57,6 @@ export default function CameraPage() {
         alignItems="center"
         justifyContent="center"
         gap={5}
-        bgcolor="white"
       >
         <Box
           width="100vw"
@@ -67,12 +66,13 @@ export default function CameraPage() {
           alignItems="center"
           justifyContent="center"
           gap={5}
-          bgcolor="grey"
+          bgcolor="lightblue"
         >
           <Camera
             ref={camera}
             aspectRatio={16 / 9}
             faceDetection="environment"
+            style={{ width: "40%", height: "100%" }}
           />
           <div
             style={{
@@ -80,21 +80,67 @@ export default function CameraPage() {
               display: "flex",
               flexDirection: "column",
               gap: "20px",
+              justifyContent: "center",
               padding: "10px",
               margin: "10px",
               justifyContent: "center",
               alignContent: "center",
+              backgroundColor: "lightgrey",
+              borderRadius: "10px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           >
-            <button onClick={takeAndUploadPhoto}>Take Photo</button>
-            <button
-              onClick={() => (window.location.href = "http://localhost:3000")}
+            <div
+              style={{
+                width: "40%",
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                padding: "10px",
+                margin: "10px",
+                justifyContent: "center",
+                alignContent: "center",
+                backgroundColor: "lightgrey",
+                borderRadius: "10px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
             >
-              Go Back
-            </button>
+              <button onClick={takeAndUploadPhoto}>Take Photo</button>
+              <button
+                onClick={() => (window.location.href = "http://localhost:3000")}
+              >
+                Go Back
+              </button>
+            </div>
+
+            {image && (
+              <div style={{ position: "relative" }}>
+                <img
+                  src={image}
+                  style={{ width: "100%" }}
+                  alt="Image preview"
+                />
+                <button
+                  onClick={() => saveImage(image)}
+                  style={{
+                    position: "absolute",
+                    bottom: 10,
+                    left: 10,
+                    backgroundColor: "transparent",
+                    color: "white",
+                    border: "1px solid white",
+                    padding: "5px 10px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save Image
+                </button>
+              </div>
+            )}
           </div>
         </Box>
-        <CldUploadWidget uploadPreset="pantry-tracker">
+        {/* <CldUploadWidget uploadPreset="pantry-tracker">
           {({ open }) => {
             return (
               <button
@@ -112,13 +158,7 @@ export default function CameraPage() {
               </button>
             );
           }}
-        </CldUploadWidget>
-        {image && (
-          <div>
-            <img src={image} alt="Image preview" />
-            <button onClick={() => saveImage(image)}>Save Image</button>
-          </div>
-        )}
+        </CldUploadWidget> */}
       </Box>
     </div>
   );

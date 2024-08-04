@@ -27,11 +27,14 @@ import {
 } from "@mui/material";
 import Link from "next/link"; // Import Link from react-router-dom
 
+import handleImageDescription from "./chatgpt/chat";
+
 export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const filteredInventory = inventory.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -131,6 +134,14 @@ export default function Home() {
     );
   };
 
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+  };
+
   return (
     <Box
       width="100vw"
@@ -142,7 +153,6 @@ export default function Home() {
       gap={2}
       bgcolor="white"
     >
-      <Upload />
       <Box
         display="flex"
         justifyContent="center"
@@ -235,6 +245,12 @@ export default function Home() {
               justifyContent="space-between"
               alignItems="center"
               padding={5}
+              onClick={() => {
+                // Handle item click only if there is an image
+                if (image) {
+                  handleItemClick(image);
+                }
+              }}
             >
               <Typography
                 variant="h3"
@@ -253,9 +269,9 @@ export default function Home() {
                 {quantity}
               </Typography>
 
-              {image && (
+              {/* {image && (
                 <img src={image} alt={name} style={{ width: 50, height: 50 }} />
-              )}
+              )} */}
 
               <Stack direction="row" spacing={2} sx={{ flex: 1 }}>
                 <Button
@@ -292,6 +308,31 @@ export default function Home() {
           Scan Item
         </Link>
       </Button>
+
+      <Modal open={selectedItem !== null} onClose={handleCloseModal}>
+        <Box bgcolor="white">
+          {selectedItem && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <img
+                src={selectedItem}
+                style={{ width: "500px" }}
+                alt="Selected Item"
+              />
+
+              <Typography variant="caption" style={{ padding: "10px" }}>
+                {handleImageDescription(selectedItem)}
+              </Typography>
+            </div>
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 }
