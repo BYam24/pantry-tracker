@@ -102,6 +102,7 @@ export default function Home() {
           } catch (error) {
             console.error("Error uploading the file", error);
           }
+          inputImage.current = null;
         }
       } else {
         await setDoc(docRef, { name: itemName.toLowerCase(), quantity: 1 });
@@ -129,6 +130,7 @@ export default function Home() {
           } catch (error) {
             console.error("Error uploading the file", error);
           }
+          inputImage.current = null;
         }
       }
       await updateInventory();

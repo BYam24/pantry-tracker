@@ -17,7 +17,7 @@ export default async function handleImageDescription(imageUrl) {
         content: [
           {
             type: "text",
-            text: "Describe the item in this photo",
+            text: "Describe the item that is being held in the photo",
           },
           {
             type: "image_url",
