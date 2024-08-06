@@ -106,9 +106,7 @@ export default function CameraPage() {
               }}
             >
               <button onClick={takeAndUploadPhoto}>Take Photo</button>
-              <button
-                onClick={() => (window.location.href = "http://localhost:3000")}
-              >
+              <button onClick={() => (location.href = "http://localhost:3000")}>
                 Go Back
               </button>
             </div>
