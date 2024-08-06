@@ -106,7 +106,12 @@ export default function CameraPage() {
               }}
             >
               <button onClick={takeAndUploadPhoto}>Take Photo</button>
-              <button onClick={() => (location.href = "http://localhost:3000")}>
+              <button
+                onClick={() =>
+                  (location.href =
+                    "https://pantry-tracker-seven-green.vercel.app/")
+                }
+              >
                 Go Back
               </button>
             </div>
